@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirement & Investment Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Custom scrollbar for sidebar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @media (max-width: 767px) {
+            body { height: auto !important; overflow: auto !important; }
+            aside, main { height: auto !important; flex-shrink: 0; }
+        }
+    </style>
+</head>
+<body class="text-gray-800 h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Sidebar / Input Panel -->
+    <aside class="w-full md:w-80 lg:w-96 bg-white shadow-xl h-full flex flex-col z-10 transition-all duration-300">
+        <div class="p-6 bg-indigo-700 text-white shadow-md">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                RetirePlan Dashboard
+            </h1>
+            <p class="text-indigo-200 text-sm mt-1">วางแผนการลงทุนและเกษียณอายุ</p>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+            
+            <!-- Section: Timeframe -->
+            <div class="space-y-4">
+                <h2 class="text-sm font-semibold text-indigo-600 uppercase tracking-wider border-b pb-2">1. ระยะเวลา (ปี)</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">อายุเริ่มลงทุน</label>
+                        <input type="number" id="currentAge" value="30" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-indigo-500 focus:border-indigo-500 outline-none" min="1" max="100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">อายุเกษียณ</label>
+                        <input type="number" id="retireAge" value="60" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-indigo-500 focus:border-indigo-500 outline-none" min="1" max="100">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">อายุขัยที่คาดหวัง</label>
+                        <input type="number" id="lifeExpectancy" value="85" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-indigo-500 focus:border-indigo-500 outline-none" min="1" max="120">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Pre-Retirement -->
+            <div class="space-y-4">
+                <h2 class="text-sm font-semibold text-green-600 uppercase tracking-wider border-b pb-2">2. ก่อนเกษียณ (สะสมทุน)</h2>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">เงินลงทุนเริ่มต้น (บาท)</label>
+                    <input type="number" id="initialInvestment" value="100000" step="10000" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-green-500 focus:border-green-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">เงินเติมลงทุนเพิ่ม<br>(บาท/เดือน)</label>
+                        <input type="number" id="monthlyContribution" value="5000" step="1000" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-green-500 focus:border-green-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">เพิ่มเงินลงทุน<br>(% ต่อปี)</label>
+                        <input type="number" id="contributionGrowthRate" value="3" step="0.1" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-green-500 focus:border-green-500 outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Post-Retirement -->
+            <div class="space-y-4">
+                <h2 class="text-sm font-semibold text-orange-500 uppercase tracking-wider border-b pb-2">3. หลังเกษียณ (ถอนใช้)</h2>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">เงินถอนใช้ต่อเดือน (ณ วันเริ่มเกษียณ)</label>
+                    <p class="text-[10px] text-gray-500 mb-2 leading-tight">ระบุจำนวนเงินที่ต้องการใช้จ่ายต่อเดือน ณ วันที่เริ่มเกษียณ</p>
+                    <input type="number" id="monthlyWithdrawal" value="30000" step="1000" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-orange-500 focus:border-orange-500 outline-none">
+                </div>
+            </div>
+
+            <!-- Section: Assumptions -->
+            <div class="space-y-4">
+                <h2 class="text-sm font-semibold text-purple-600 uppercase tracking-wider border-b pb-2">4. สมมติฐาน</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">ผลตอบแทนก่อนเกษียณ<br>(% ต่อปี)</label>
+                        <input type="number" id="expectedReturnPre" value="8" step="0.1" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-purple-500 focus:border-purple-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">ผลตอบแทนหลังเกษียณ<br>(% ต่อปี)</label>
+                        <input type="number" id="expectedReturnPost" value="4" step="0.1" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-purple-500 focus:border-purple-500 outline-none">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">อัตราเงินเฟ้อ<br>(% ต่อปี)</label>
+                        <input type="number" id="inflationRate" value="3" step="0.1" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-purple-500 focus:border-purple-500 outline-none">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pt-4 pb-8 space-y-3">
+                 <button id="calculateBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg shadow transition-colors duration-200 flex justify-center items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M11.3 1.046A12.014 12.014 0 0010.326 1c-1.3 0-2.583.18-3.81.517A3 3 0 004 4.385v11.23a3 3 0 002.516 2.868c1.227.337 2.51.517 3.81.517.842 0 1.666-.089 2.47-.26a3 3 0 002.204-2.867V4.385a3 3 0 00-2.204-2.868 11.758 11.758 0 00-1.502-.47zM10 6a1 1 0 100 2 1 1 0 000-2zm-2 4a1 1 0 112 0 1 1 0 01-2 0zm4 0a1 1 0 112 0 1 1 0 01-2 0zm-4 4a1 1 0 112 0 1 1 0 01-2 0zm4 0a1 1 0 112 0 1 1 0 01-2 0z" clip-rule="evenodd" />
+                    </svg>
+                    คำนวณแผนของฉัน
+                 </button>
+                 
+                 <button id="shareBtn" onclick="sharePlan()" class="w-full bg-white border-2 border-indigo-100 hover:border-indigo-500 text-indigo-600 font-medium py-3 px-4 rounded-lg shadow-sm transition-all duration-200 flex justify-center items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    <span id="shareBtnText">คัดลอกลิงก์เพื่อแชร์</span>
+                 </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-y-auto w-full">
+        <!-- Header area for Mobile -->
+        <div class="md:hidden bg-indigo-700 text-white p-4 shadow-md flex justify-between items-center">
+            <h1 class="text-lg font-bold">RetirePlan</h1>
+            <span class="text-xs bg-indigo-800 px-2 py-1 rounded">เลื่อนลงเพื่อดูผลลัพธ์</span>
+        </div>
+
+        <div class="p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+            
+            <!-- Dashboard Title -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-2">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">ภาพรวมแผนเกษียณ</h2>
+                    <p class="text-gray-500 text-sm mt-1" id="statusMessage">ผลลัพธ์การเติบโตและการลดลงของพอร์ตการลงทุนของคุณ</p>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                
+                <!-- Card 1: Total at Retirement -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-2 h-full bg-green-500"></div>
+                    <div class="bg-green-100 text-green-600 p-3 rounded-full flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">มูลค่าพอร์ต ณ วันเกษียณ</p>
+                        <h3 class="text-xl font-bold text-gray-800 mt-1" id="outTotalAtRetirement">0 ฿</h3>
+                    </div>
+                </div>
+
+                <!-- Card 2: Inflated Withdrawal Need -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-2 h-full bg-orange-400"></div>
+                    <div class="bg-orange-100 text-orange-600 p-3 rounded-full flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">เงินที่ถอนเดือนแรกหลังเกษียณ</p>
+                        <h3 class="text-xl font-bold text-gray-800 mt-1" id="outActualWithdrawalStart">0 ฿</h3>
+                    </div>
+                </div>
+
+                <!-- Card 3: Ending Balance -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-2 h-full bg-blue-500" id="cardColorEnding"></div>
+                    <div class="bg-blue-100 text-blue-600 p-3 rounded-full flex-shrink-0" id="iconColorEnding">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">มูลค่าคงเหลือตอนสิ้นอายุขัย</p>
+                        <h3 class="text-xl font-bold text-gray-800 mt-1" id="outEndingBalance">0 ฿</h3>
+                    </div>
+                </div>
+
+                <!-- Card 4: Plan Status -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-2 h-full bg-purple-500" id="cardColorStatus"></div>
+                    <div class="bg-purple-100 text-purple-600 p-3 rounded-full flex-shrink-0" id="iconColorStatus">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">สถานะแผนการเงิน</p>
+                        <h3 class="text-base font-bold text-gray-800 mt-1 leading-tight" id="outPlanStatus">กำลังประมวลผล...</h3>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="border-b border-gray-200 mt-6 mb-4">
+                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button id="tab-btn-chart" onclick="switchTab('chart')" class="border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                        </svg>
+                        กราฟสรุป
+                    </button>
+                    <button id="tab-btn-table" onclick="switchTab('table')" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        ตารางรายละเอียดรายปี
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content: Chart Area -->
+            <div id="tab-content-chart" class="block">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6 mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                        </svg>
+                        กราฟแสดงมูลค่าพอร์ตการลงทุนตามอายุ
+                    </h3>
+                    <div class="relative w-full h-80 md:h-96">
+                        <canvas id="wealthChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Detailed Breakdown (Optional visual filler for depth) -->
+                <div class="bg-indigo-50 rounded-xl p-5 border border-indigo-100 text-sm text-indigo-800 flex gap-3 mb-8">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0 mt-0.5 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                    <p><strong>หมายเหตุ:</strong> การคำนวณนี้เป็นเพียงการประมาณการทางคณิตศาสตร์ เงินถอนใช้จะเริ่มที่จำนวนเงินที่คุณระบุ และหลังจากเกษียณแล้ว เงินถอนในแต่ละปีจะปรับเพิ่มขึ้นตาม <strong>อัตราเงินเฟ้อ</strong> เพื่อรักษากำลังซื้อให้เท่าเดิมตลอดอายุขัย</p>
+                </div>
+            </div>
+
+            <!-- Tab Content: Table Area -->
+            <div id="tab-content-table" class="hidden pb-8">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">อายุ (ปี)</th>
+                                    <th scope="col" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">ต้นปี (บาท)</th>
+                                    <th scope="col" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">เงินเติม / เงินถอน (บาท)</th>
+                                    <th scope="col" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">ผลตอบแทนรายปี (บาท)</th>
+                                    <th scope="col" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">สิ้นปี (บาท)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="yearlyTableBody" class="bg-white divide-y divide-gray-100">
+                                <!-- Table rows will be inserted here dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 mt-4 text-xs text-gray-500 justify-end">
+                    <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-50 inline-block border border-green-200"></span> ช่วงก่อนเกษียณ</div>
+                    <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-orange-50 inline-block border border-orange-200"></span> ช่วงหลังเกษียณ</div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Number formatter for Thai Baht
+        const formatter = new Intl.NumberFormat('th-TH', {
+            style: 'currency',
+            currency: 'THB',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+
+        // Initialize Chart Variable
+        let wealthChartInstance = null;
+        
+        function loadPlanFromURL() {
+            const params = new URLSearchParams(window.__initialQuery || window.location.search);
+            
+            // Map of URL parameters to input IDs
+            const paramMap = {
+                'age': 'currentAge',
+                'retire': 'retireAge',
+                'life': 'lifeExpectancy',
+                'invest': 'initialInvestment',
+                'monthly': 'monthlyContribution',
+                'growth': 'contributionGrowthRate',
+                'withdraw': 'monthlyWithdrawal',
+                'ret_pre': 'expectedReturnPre',
+                'ret_post': 'expectedReturnPost',
+                'inf': 'inflationRate'
+            };
+
+            let hasParams = false;
+            for (const [param, id] of Object.entries(paramMap)) {
+                if (params.has(param)) {
+                    document.getElementById(id).value = params.get(param);
+                    hasParams = true;
+                }
+            }
+            return hasParams;
+        }
+
+        function sharePlan() {
+            const params = new URLSearchParams();
+            
+            // Set current values to URL parameters
+            params.set('age', document.getElementById('currentAge').value);
+            params.set('retire', document.getElementById('retireAge').value);
+            params.set('life', document.getElementById('lifeExpectancy').value);
+            params.set('invest', document.getElementById('initialInvestment').value);
+            params.set('monthly', document.getElementById('monthlyContribution').value);
+            params.set('growth', document.getElementById('contributionGrowthRate').value);
+            params.set('withdraw', document.getElementById('monthlyWithdrawal').value);
+            params.set('ret_pre', document.getElementById('expectedReturnPre').value);
+            params.set('ret_post', document.getElementById('expectedReturnPost').value);
+            params.set('inf', document.getElementById('inflationRate').value);
+
+            // Construct new URL safely (Handle blob/iframe URLs)
+            let hostUrl = document.referrer || window.location.href;
+            try { hostUrl = window.parent.location.href; } catch (_) {}
+            const baseUrl = hostUrl.split('?')[0].split('#')[0];
+            const newUrl = baseUrl + '?' + params.toString();
+            
+            // Update browser URL without reloading
+            try {
+                window.history.replaceState({path: newUrl}, '', newUrl);
+            } catch (error) {
+                console.warn("ไม่สามารถอัปเดต URL History ได้ในสภาพแวดล้อมนี้ (Preview/Iframe) แต่ลิงก์ยังถูกคัดลอกตามปกติ", error);
+            }
+
+            // Copy to clipboard using iframe-safe method
+            const textArea = document.createElement("textarea");
+            textArea.value = newUrl;
+            textArea.style.position = "fixed";  // Avoid scrolling to bottom
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                if (!document.execCommand('copy')) throw new Error('Copy unavailable');
+                
+                // Show success feedback on button
+                const btn = document.getElementById('shareBtn');
+                const btnText = document.getElementById('shareBtnText');
+                const originalHTML = btn.innerHTML;
+                
+                btn.classList.remove('border-indigo-100', 'text-indigo-600');
+                btn.classList.add('bg-green-50', 'border-green-500', 'text-green-700');
+                
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>คัดลอกลิงก์สำเร็จ!</span>
+                `;
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('bg-green-50', 'border-green-500', 'text-green-700');
+                    btn.classList.add('border-indigo-100', 'text-indigo-600');
+                }, 2500);
+
+            } catch (err) {
+                window.prompt('คัดลอกลิงก์นี้เพื่อแชร์แผน', newUrl);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            document.getElementById('tab-content-chart').classList.toggle('hidden', tabId !== 'chart');
+            document.getElementById('tab-content-table').classList.toggle('hidden', tabId !== 'table');
+            
+            const chartBtn = document.getElementById('tab-btn-chart');
+            const tableBtn = document.getElementById('tab-btn-table');
+            
+            const activeClass = "border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors";
+            const inactiveClass = "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors";
+            
+            if (tabId === 'chart') {
+                chartBtn.className = activeClass;
+                tableBtn.className = inactiveClass;
+            } else {
+                tableBtn.className = activeClass;
+                chartBtn.className = inactiveClass;
+            }
+        }
+
+        // Function to calculate and render dashboard
+        function calculatePlan() {
+            // Get inputs
+            const currentAge = parseInt(document.getElementById('currentAge').value);
+            const retireAge = parseInt(document.getElementById('retireAge').value);
+            const lifeExpectancy = parseInt(document.getElementById('lifeExpectancy').value);
+            
+            const initialInvestment = parseFloat(document.getElementById('initialInvestment').value);
+            const monthlyContribution = parseFloat(document.getElementById('monthlyContribution').value);
+            const contributionGrowthRate = parseFloat(document.getElementById('contributionGrowthRate').value) / 100 || 0;
+            const monthlyWithdrawalStart = parseFloat(document.getElementById('monthlyWithdrawal').value);
+            
+            const expectedReturnPre = parseFloat(document.getElementById('expectedReturnPre').value) / 100;
+            const expectedReturnPost = parseFloat(document.getElementById('expectedReturnPost').value) / 100;
+            const inflationRate = parseFloat(document.getElementById('inflationRate').value) / 100;
+
+            // Validate logic (Basic)
+            if (currentAge >= retireAge || retireAge >= lifeExpectancy) {
+                alert("กรุณาตรวจสอบอายุ: อายุเริ่มลงทุน ต้องน้อยกว่า อายุเกษียณ และ อายุเกษียณ ต้องน้อยกว่า อายุขัย");
+                return;
+            }
+
+            // Monthly Rates
+            const monthlyReturnRatePre = expectedReturnPre / 12;
+            const monthlyReturnRatePost = expectedReturnPost / 12;
+            const monthlyInflationRate = inflationRate / 12;
+
+            let balance = initialInvestment;
+            
+            // Arrays for Chart.js and Table
+            const ages = [];
+            const balances = [];
+            const backgrounds = [];
+            const borderColors = [];
+            const withdrawalHistory = [];
+            const yearlyDetails = []; // Array สำหรับเก็บข้อมูลตารางรายปี
+
+            // Tracking Variables
+            let balanceAtRetirement = 0;
+            let ranOutAge = null;
+            let currentMonthlyContribution = monthlyContribution;
+
+            // Phase 1: Pre-Retirement (Accumulation)
+            for (let age = currentAge; age < retireAge; age++) {
+                let startBal = balance;
+                let yearlyContribution = 0;
+
+                // Record Start of Year for Chart
+                ages.push(age);
+                balances.push(Math.round(balance));
+                backgrounds.push('rgba(16, 185, 129, 0.2)'); // Greenish
+                borderColors.push('rgb(16, 185, 129)');
+                withdrawalHistory.push(0);
+
+                // Simulate 12 months
+                for (let m = 0; m < 12; m++) {
+                    balance += currentMonthlyContribution;
+                    yearlyContribution += currentMonthlyContribution;
+                    balance *= (1 + monthlyReturnRatePre);
+                }
+
+                let endBal = balance;
+                let returnAmount = endBal - startBal - yearlyContribution;
+
+                // Save data for Table
+                yearlyDetails.push({
+                    age: age,
+                    startBal: startBal,
+                    flow: yearlyContribution, // ค่าบวก (เงินเติม)
+                    returnAmount: returnAmount,
+                    endBal: endBal,
+                    phase: 'pre'
+                });
+
+                // ปรับเพิ่มเงินลงทุนต่อเดือนสำหรับปีถัดไป
+                currentMonthlyContribution *= (1 + contributionGrowthRate);
+            }
+
+            balanceAtRetirement = balance;
+
+            // Set initial withdrawal at retirement
+            let currentMonthlyWithdrawal = monthlyWithdrawalStart;
+            const initialInflatedWithdrawal = currentMonthlyWithdrawal;
+
+            // Phase 2: Post-Retirement (Decumulation)
+            for (let age = retireAge; age <= lifeExpectancy; age++) {
+                let startBal = balance;
+                let actualYearlyWithdrawal = 0;
+
+                ages.push(age);
+                balances.push(Math.round(balance));
+                withdrawalHistory.push(currentMonthlyWithdrawal);
+                
+                // Color change for retirement phase
+                backgrounds.push('rgba(249, 115, 22, 0.2)'); // Orange
+                borderColors.push('rgb(249, 115, 22)');
+
+                // Simulate 12 months
+                for (let m = 0; m < 12; m++) {
+                    if (balance > 0) {
+                        // ป้องกันการถอนจนยอดติดลบ หากเงินเหลือน้อยกว่ายอดที่ต้องถอน
+                        let toWithdraw = currentMonthlyWithdrawal;
+                        if (balance < currentMonthlyWithdrawal) {
+                            toWithdraw = balance; 
+                        }
+                        
+                        balance -= toWithdraw;
+                        actualYearlyWithdrawal += toWithdraw;
+                        
+                        if (balance > 0) {
+                            balance *= (1 + monthlyReturnRatePost);
+                        } else {
+                            balance = 0;
+                            if (!ranOutAge) ranOutAge = age + (m/12);
+                        }
+                    }
+                }
+                
+                let endBal = balance;
+                let returnAmount = endBal - startBal + actualYearlyWithdrawal; // ผลตอบแทน = สิ้นปี - ต้นปี + เงินที่ถอนออกไป
+
+                // Save data for Table
+                yearlyDetails.push({
+                    age: age,
+                    startBal: startBal,
+                    flow: -actualYearlyWithdrawal, // ค่าลบ (เงินถอน)
+                    returnAmount: returnAmount,
+                    endBal: endBal,
+                    phase: 'post'
+                });
+
+                // ปรับเพิ่มเงินถอนใช้รายเดือนสำหรับปีถัดไปตามอัตราเงินเฟ้อ
+                currentMonthlyWithdrawal *= (1 + inflationRate);
+            }
+
+            // Update Summary Cards UI
+            document.getElementById('outTotalAtRetirement').innerText = formatter.format(balanceAtRetirement);
+            document.getElementById('outActualWithdrawalStart').innerText = formatter.format(initialInflatedWithdrawal) + " / ด.";
+            document.getElementById('outEndingBalance').innerText = formatter.format(balance);
+
+            // Status Logic & UI Colors
+            const statusEl = document.getElementById('outPlanStatus');
+            const cardEnding = document.getElementById('cardColorEnding');
+            const iconEnding = document.getElementById('iconColorEnding');
+            const cardStatus = document.getElementById('cardColorStatus');
+            const iconStatus = document.getElementById('iconColorStatus');
+
+            if (balance > 0) {
+                statusEl.innerText = "สำเร็จ! เงินพอใช้ตลอดชีพ 🎉";
+                statusEl.className = "text-base font-bold text-green-600 mt-1 leading-tight";
+                
+                // Ending Balance Card Colors -> Green/Blue
+                cardEnding.className = "absolute right-0 top-0 w-2 h-full bg-blue-500";
+                iconEnding.className = "bg-blue-100 text-blue-600 p-3 rounded-full flex-shrink-0";
+                
+                // Status Card Colors -> Green
+                cardStatus.className = "absolute right-0 top-0 w-2 h-full bg-green-500";
+                iconStatus.className = "bg-green-100 text-green-600 p-3 rounded-full flex-shrink-0";
+            } else {
+                let formattedRanOutAge = Math.floor(ranOutAge);
+                let formattedMonth = Math.round((ranOutAge - formattedRanOutAge) * 12);
+                statusEl.innerText = `เงินหมดตอนอายุ ${formattedRanOutAge} ปี ${formattedMonth} เดือน ⚠️`;
+                statusEl.className = "text-base font-bold text-red-600 mt-1 leading-tight";
+
+                // Ending Balance Card Colors -> Red
+                cardEnding.className = "absolute right-0 top-0 w-2 h-full bg-red-500";
+                iconEnding.className = "bg-red-100 text-red-600 p-3 rounded-full flex-shrink-0";
+                
+                // Status Card Colors -> Red
+                cardStatus.className = "absolute right-0 top-0 w-2 h-full bg-red-500";
+                iconStatus.className = "bg-red-100 text-red-600 p-3 rounded-full flex-shrink-0";
+            }
+
+            // Render Chart & Table
+            renderChart(ages, balances, borderColors, retireAge, withdrawalHistory);
+            renderTable(yearlyDetails);
+        }
+
+        // Function to render detailed table
+        function renderTable(data) {
+            const tbody = document.getElementById('yearlyTableBody');
+            tbody.innerHTML = '';
+            
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                // Color coding logic
+                const bgClass = row.phase === 'pre' ? 'bg-green-50/30' : 'bg-orange-50/30';
+                tr.className = `hover:bg-gray-50 transition-colors ${bgClass}`;
+                
+                const flowText = row.flow >= 0 
+                    ? `<span class="text-green-600 font-medium">+${formatter.format(row.flow)}</span>`
+                    : `<span class="text-orange-600 font-medium">${formatter.format(row.flow)}</span>`;
+
+                const returnClass = row.returnAmount >= 0 ? 'text-gray-900' : 'text-red-600';
+                const returnText = `<span class="${returnClass}">${row.returnAmount > 0 ? '+' : ''}${formatter.format(row.returnAmount)}</span>`;
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center font-medium">${row.age}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-right">${formatter.format(row.startBal)}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-right">${flowText}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-right">${returnText}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-bold">${formatter.format(row.endBal)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Function to create/update Chart.js
+        function renderChart(labels, data, borderColors, retireAgeIndexMark, withdrawalHistory) {
+            const ctx = document.getElementById('wealthChart').getContext('2d');
+            
+            // Destroy existing chart if it exists to prevent overlap
+            if (wealthChartInstance) {
+                wealthChartInstance.destroy();
+            }
+
+            wealthChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'มูลค่าพอร์ต (บาท)',
+                        data: data,
+                        withdrawalData: withdrawalHistory, // แนบข้อมูลการถอนเข้ากับ dataset
+                        borderColor: borderColors, // Array of colors to show phase change
+                        backgroundColor: (context) => {
+                            const ctx = context.chart.ctx;
+                            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                            gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)'); // Indigo transition
+                            gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+                            return gradient;
+                        },
+                        borderWidth: 3,
+                        pointBackgroundColor: borderColors,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 1,
+                        pointRadius: 2,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4 // Smooth curves
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // Hide legend to save space
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 }).format(context.parsed.y);
+                                    }
+                                    
+                                    // แสดงข้อมูลยอดถอนเงินใน Tooltip ถ้ามีการถอน
+                                    const index = context.dataIndex;
+                                    const withdrawal = context.dataset.withdrawalData[index];
+                                    if (withdrawal > 0) {
+                                        // จัดรูปแบบ tooltip ให้มีสองบรรทัด
+                                        return [label, `ถอนใช้ในปีนี้: ${new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 }).format(withdrawal)} / เดือน`];
+                                    }
+                                    
+                                    return label;
+                                },
+                                title: function(context) {
+                                    return 'อายุ ' + context[0].label + ' ปี';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'อายุ (ปี)',
+                                font: {
+                                    family: "'Prompt', sans-serif"
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) {
+                                        return (value / 1000000).toFixed(1) + 'M';
+                                    } else if (value >= 1000) {
+                                        return (value / 1000).toFixed(0) + 'k';
+                                    }
+                                    return value;
+                                },
+                                font: {
+                                    family: "'Prompt', sans-serif"
+                                }
+                            },
+                            border: {
+                                dash: [4, 4]
+                            },
+                            grid: {
+                                color: '#e5e7eb'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Event Listeners for Live Update
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('input', calculatePlan);
+        });
+
+        document.getElementById('calculateBtn').addEventListener('click', calculatePlan);
+
+        // Initial Calculation on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPlanFromURL();
+            calculatePlan();
+        });
+
+    </script>
+</body>
+</html>
