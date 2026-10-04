@@ -112,6 +112,14 @@
                         <label class="block text-xs font-medium text-gray-700 mb-1">อัตราเงินเฟ้อ<br>(% ต่อปี)</label>
                         <input type="number" id="inflationRate" value="3" step="0.1" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-purple-500 focus:border-purple-500 outline-none">
                     </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">รูปแบบการทบต้น</label>
+                        <select id="compoundingFrequency" class="w-full rounded-md border-gray-300 border p-2 text-sm focus:ring-purple-500 focus:border-purple-500 outline-none">
+                            <option value="monthly" selected>ทบต้นรายเดือน (12 ครั้ง/ปี)</option>
+                            <option value="yearly">ทบต้นรายปี (1 ครั้ง/ปี)</option>
+                        </select>
+                        <p class="text-[10px] text-gray-500 mt-1 leading-tight">รายเดือนคิดผลตอบแทนทุกเดือน ส่วนรายปีคิดผลตอบแทนปีละครั้ง</p>
+                    </div>
                 </div>
             </div>
             
@@ -308,7 +316,8 @@
                 'withdraw': 'monthlyWithdrawal',
                 'ret_pre': 'expectedReturnPre',
                 'ret_post': 'expectedReturnPost',
-                'inf': 'inflationRate'
+                'inf': 'inflationRate',
+                'compound': 'compoundingFrequency'
             };
 
             let hasParams = false;
@@ -335,6 +344,7 @@
             params.set('ret_pre', document.getElementById('expectedReturnPre').value);
             params.set('ret_post', document.getElementById('expectedReturnPost').value);
             params.set('inf', document.getElementById('inflationRate').value);
+            params.set('compound', document.getElementById('compoundingFrequency').value);
 
             // Construct new URL safely (Handle blob/iframe URLs)
             let hostUrl = document.referrer || window.location.href;
@@ -423,6 +433,8 @@
             const expectedReturnPre = parseFloat(document.getElementById('expectedReturnPre').value) / 100;
             const expectedReturnPost = parseFloat(document.getElementById('expectedReturnPost').value) / 100;
             const inflationRate = parseFloat(document.getElementById('inflationRate').value) / 100;
+            const compoundingFrequency = document.getElementById('compoundingFrequency').value;
+            const periodsPerYear = compoundingFrequency === 'yearly' ? 1 : 12;
 
             // Validate logic (Basic)
             if (currentAge >= retireAge || retireAge >= lifeExpectancy) {
@@ -430,10 +442,9 @@
                 return;
             }
 
-            // Monthly Rates
-            const monthlyReturnRatePre = expectedReturnPre / 12;
-            const monthlyReturnRatePost = expectedReturnPost / 12;
-            const monthlyInflationRate = inflationRate / 12;
+            // อัตราผลตอบแทนต่อรอบตามรูปแบบทบต้นที่เลือก
+            const returnRatePre = expectedReturnPre / periodsPerYear;
+            const returnRatePost = expectedReturnPost / periodsPerYear;
 
             let balance = initialInvestment;
             
@@ -462,11 +473,18 @@
                 borderColors.push('rgb(16, 185, 129)');
                 withdrawalHistory.push(0);
 
-                // Simulate 12 months
-                for (let m = 0; m < 12; m++) {
-                    balance += currentMonthlyContribution;
-                    yearlyContribution += currentMonthlyContribution;
-                    balance *= (1 + monthlyReturnRatePre);
+                if (compoundingFrequency === 'yearly') {
+                    // โหมดรายปี: เติมเงินรายเดือนรวมเป็นก้อนปีละครั้ง แล้วคิดผลตอบแทนครั้งเดียว
+                    yearlyContribution = currentMonthlyContribution * 12;
+                    balance += yearlyContribution;
+                    balance *= (1 + expectedReturnPre);
+                } else {
+                    // โหมดรายเดือน: เติมเงินและคิดผลตอบแทนทุกเดือน
+                    for (let m = 0; m < 12; m++) {
+                        balance += currentMonthlyContribution;
+                        yearlyContribution += currentMonthlyContribution;
+                        balance *= (1 + returnRatePre);
+                    }
                 }
 
                 let endBal = balance;
@@ -505,23 +523,33 @@
                 backgrounds.push('rgba(249, 115, 22, 0.2)'); // Orange
                 borderColors.push('rgb(249, 115, 22)');
 
-                // Simulate 12 months
-                for (let m = 0; m < 12; m++) {
+                if (compoundingFrequency === 'yearly') {
+                    // โหมดรายปี: ถอนเงินรายเดือนรวมเป็นก้อนปีละครั้ง แล้วคิดผลตอบแทนครั้งเดียว
                     if (balance > 0) {
-                        // ป้องกันการถอนจนยอดติดลบ หากเงินเหลือน้อยกว่ายอดที่ต้องถอน
-                        let toWithdraw = currentMonthlyWithdrawal;
-                        if (balance < currentMonthlyWithdrawal) {
-                            toWithdraw = balance; 
-                        }
-                        
+                        const yearlyWithdrawal = currentMonthlyWithdrawal * 12;
+                        const toWithdraw = Math.min(balance, yearlyWithdrawal);
                         balance -= toWithdraw;
-                        actualYearlyWithdrawal += toWithdraw;
-                        
+                        actualYearlyWithdrawal = toWithdraw;
                         if (balance > 0) {
-                            balance *= (1 + monthlyReturnRatePost);
+                            balance *= (1 + expectedReturnPost);
                         } else {
                             balance = 0;
-                            if (!ranOutAge) ranOutAge = age + (m/12);
+                            if (!ranOutAge) ranOutAge = age;
+                        }
+                    }
+                } else {
+                    // โหมดรายเดือน: ถอนเงินและคิดผลตอบแทนทุกเดือน
+                    for (let m = 0; m < 12; m++) {
+                        if (balance > 0) {
+                            const toWithdraw = Math.min(balance, currentMonthlyWithdrawal);
+                            balance -= toWithdraw;
+                            actualYearlyWithdrawal += toWithdraw;
+                            if (balance > 0) {
+                                balance *= (1 + returnRatePost);
+                            } else {
+                                balance = 0;
+                                if (!ranOutAge) ranOutAge = age + (m / 12);
+                            }
                         }
                     }
                 }
@@ -732,9 +760,10 @@
         }
 
         // Event Listeners for Live Update
-        const inputs = document.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.addEventListener('input', calculatePlan);
+        const controls = document.querySelectorAll('input, select');
+        controls.forEach(control => {
+            control.addEventListener('input', calculatePlan);
+            control.addEventListener('change', calculatePlan);
         });
 
         document.getElementById('calculateBtn').addEventListener('click', calculatePlan);
