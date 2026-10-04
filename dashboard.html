@@ -8,9 +8,39 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        * { box-sizing: border-box; }
+        html { min-width: 320px; background-color: #f3f4f6; }
         body {
             font-family: 'Prompt', sans-serif;
             background-color: #f3f4f6;
+            min-width: 320px;
+        }
+        main { min-width: 0; }
+        input, select, button { min-height: 42px; }
+        #tab-content-table .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+        #tab-content-table table { min-width: 700px; }
+        @media (max-width: 1023px) {
+            main > div { max-width: 100%; }
+        }
+        @media (max-width: 767px) {
+            body { height: auto !important; overflow-x: hidden !important; overflow-y: auto !important; }
+            aside, main { height: auto !important; flex-shrink: 0; }
+            aside > div:last-child { overflow: visible; }
+            aside .p-6 { padding: 1rem !important; }
+            aside .space-y-6 > * + * { margin-top: 1.25rem; }
+            main > .p-4 { padding: 1rem !important; }
+            main > .p-4 > .space-y-6 { gap: 1rem; }
+            .grid-cols-2 { grid-template-columns: minmax(0, 1fr) !important; }
+            .col-span-2 { grid-column: span 1 / span 1 !important; }
+            #tab-btn-chart, #tab-btn-table { flex-shrink: 0; padding-top: .75rem; padding-bottom: .75rem; }
+            nav[aria-label="Tabs"] { overflow-x: auto; gap: 1rem; }
+            #tab-content-chart h3 { font-size: 1rem; line-height: 1.4; }
+            #tab-content-chart .h-80 { height: 18rem; }
+            .text-xl { font-size: 1.05rem; }
+        }
+        @media (min-width: 768px) and (max-width: 1023px) {
+            aside { width: 19rem !important; }
+            main > .p-4 { padding: 1.25rem !important; }
         }
         /* Custom scrollbar for sidebar */
         ::-webkit-scrollbar {
